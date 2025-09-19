@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Puter AI on Render</title>
-    <script src="https://js.puter.com/v2/"></script>
-    <script src="app.js" defer></script>
-  </head>
-  <body>
-    <h1>🚀 Puter AI Chat on Render</h1>
-    <div id="output"></div>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>Puter AI Demo</title>
+  <script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+  <h1>Puter AI Browser Demo</h1>
+  <div id="output"></div>
+
+  <script>
+    async function run() {
+      // Example using gpt-5
+      const response = await puter.ai.chat("Write a short poem about coding", {
+        model: "gpt-5"
+      });
+      document.getElementById("output").innerHTML = `<p>${response}</p>`;
+    }
+
+    run();
+  </script>
+</body>
 </html>
