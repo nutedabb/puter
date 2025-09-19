@@ -3,20 +3,34 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import "dotenv/config";
 
-// Import Puter in Node (not in browser)
-import puter from "@puter-ai/js"; // if available in npm
+// Use dynamic import for the browser bundle
+const loadPuter = async () => {
+  const puter = await import("https://js.puter.com/v2/");
+  return puter;
+};
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+let puterInstance = null;
+
+// Ensure Puter is loaded before handling requests
+(async () => {
+  puterInstance = await loadPuter();
+})();
+
 // Chat endpoint
 app.post("/chat", async (req, res) => {
   try {
-    const { prompt, model } = req.body;
+    if (!puterInstance) {
+      return res.status(503).json({ error: "Puter not initialized yet" });
+    }
 
-    // Call Puter AI
-    const response = await puter.ai.chat(prompt, { model: model || "gpt-5-nano" });
+    const { prompt, model } = req.body;
+    const response = await puterInstance.ai.chat(prompt, {
+      model: model || "gpt-5-nano",
+    });
 
     res.json({ text: response });
   } catch (err) {
@@ -25,11 +39,10 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-// Root route (for health check)
+// Health check route
 app.get("/", (req, res) => {
   res.send("🚀 Puter AI API is running");
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
