@@ -1,5 +1,11 @@
 import express from "express";
+
 const app = express();
-app.use(express.static("public"));
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Serving on port ${PORT}`));
+
+// Serve everything inside "public" folder
+app.use(express.static("public"));
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
