@@ -2,23 +2,116 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Puter AI Chat</title>
+  <title>🚀 Puter AI Chat on Render</title>
   <script src="https://js.puter.com/v2/"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    textarea { width: 100%; }
+    button { margin: 5px 0; padding: 6px 12px; }
+    img { max-width: 400px; margin-top: 10px; display: block; }
+    .section { margin-top: 30px; }
+  </style>
 </head>
 <body>
   <h1>🚀 Puter AI Chat on Render</h1>
 
-  <textarea id="prompt" rows="4" cols="50" placeholder="Type your prompt..."></textarea><br>
-  <button onclick="sendPrompt()">Send</button>
+  <!-- Chat UI -->
+  <div class="section">
+    <h2>Chat</h2>
+    <textarea id="prompt" rows="4" placeholder="Type your prompt..."></textarea><br>
+    <select id="model">
+      <option value="gpt-5-nano">gpt-5-nano</option>
+      <option value="gpt-5-mini">gpt-5-mini</option>
+      <option value="gpt-5">gpt-5</option>
+      <option value="gpt-4o">gpt-4o</option>
+      <option value="o1">o1</option>
+    </select>
+    <button onclick="sendPrompt()">Send</button>
+    <h3>Response:</h3>
+    <pre id="response"></pre>
+  </div>
 
-  <h3>Response:</h3>
-  <pre id="response"></pre>
+  <!-- Image Generation -->
+  <div class="section">
+    <h2>Image Generator</h2>
+    <input id="imagePrompt" type="text" placeholder="Describe an image..." style="width:100%">
+    <button onclick="generateImage()">Generate Image</button>
+    <div id="imageResult"></div>
+  </div>
+
+  <!-- Streaming -->
+  <div class="section">
+    <h2>Streaming Example</h2>
+    <button onclick="streamResponse()">Stream: Explain relativity</button>
+    <pre id="streamResponse"></pre>
+  </div>
+
+  <!-- Tool Calling -->
+  <div class="section">
+    <h2>Tool Calling (Calculator)</h2>
+    <button onclick="askCalculator()">Ask: 15 × 7?</button>
+    <pre id="toolResponse"></pre>
+  </div>
 
   <script>
+    // --- Chat ---
     async function sendPrompt() {
       const prompt = document.getElementById("prompt").value;
-      const response = await puter.ai.chat(prompt, { model: "gpt-5-nano" });
+      const model = document.getElementById("model").value;
+      const response = await puter.ai.chat(prompt, { model });
       document.getElementById("response").innerText = response;
+    }
+
+    // --- Image Generation ---
+    async function generateImage() {
+      const prompt = document.getElementById("imagePrompt").value;
+      const imageElement = await puter.ai.txt2img(prompt, { model: "gpt-image-1" });
+      const resultDiv = document.getElementById("imageResult");
+      resultDiv.innerHTML = "";
+      resultDiv.appendChild(imageElement);
+    }
+
+    // --- Streaming ---
+    async function streamResponse() {
+      const target = document.getElementById("streamResponse");
+      target.innerText = "";
+      const response = await puter.ai.chat("Explain the theory of relativity in detail", {stream: true, model: "gpt-5-nano"});
+      for await (const part of response) {
+        target.innerText += part?.text || "";
+      }
+    }
+
+    // --- Tool/Function Calling ---
+    async function askCalculator() {
+      const tools = [{
+        type: "function",
+        function: {
+          name: "calculate",
+          description: "Perform basic math operations",
+          parameters: {
+            type: "object",
+            properties: {
+              operation: { type: "string", enum: ["add", "subtract", "multiply", "divide"] },
+              a: { type: "number" },
+              b: { type: "number" }
+            },
+            required: ["operation", "a", "b"]
+          }
+        }
+      }];
+
+      const response = await puter.ai.chat("What is 15 multiplied by 7?", { tools });
+      const out = document.getElementById("toolResponse");
+
+      if (response.message.tool_calls) {
+        const call = response.message.tool_calls[0];
+        const args = JSON.parse(call.function.arguments);
+        let result;
+        if (args.operation === "multiply") result = args.a * args.b;
+        out.innerText = `AI requested: ${args.a} × ${args.b} = ${result}`;
+      } else {
+        out.innerText = JSON.stringify(response, null, 2);
+      }
     }
   </script>
 </body>
