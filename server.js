@@ -1,24 +1,35 @@
 import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
 import cors from "cors";
 import bodyParser from "body-parser";
 import "dotenv/config";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Import Puter in Node (not in browser)
+import puter from "@puter-ai/js"; // if available in npm
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from "public"
-app.use(express.static(path.join(__dirname, "public")));
+// Chat endpoint
+app.post("/chat", async (req, res) => {
+  try {
+    const { prompt, model } = req.body;
 
-// Default route: serve index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+    // Call Puter AI
+    const response = await puter.ai.chat(prompt, { model: model || "gpt-5-nano" });
+
+    res.json({ text: response });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Chat failed" });
+  }
 });
 
+// Root route (for health check)
+app.get("/", (req, res) => {
+  res.send("🚀 Puter AI API is running");
+});
+
+// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
